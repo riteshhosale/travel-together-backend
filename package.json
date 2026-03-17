@@ -4,7 +4,7 @@
   "description": "Backend for the travel together application",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js",
+    "start": "node server/app.js",
     "dev": "nodemon app.js"
   },
   "keywords": [],
