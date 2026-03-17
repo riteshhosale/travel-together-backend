@@ -4,8 +4,8 @@
   "description": "Backend for the travel together application",
   "main": "app.js",
   "scripts": {
-    "start": "node server/app.js",
-    "dev": "nodemon server/app.js"
+    "start": "node app.js",
+    "dev": "nodemon app.js"
   },
   "keywords": [],
   "author": "Ritesh Bhosale",
