@@ -5,7 +5,11 @@
   "main": "server/app.js",
   "scripts": {
     "start": "node server/app.js",
+<<<<<<< HEAD
     "dev": "nodemon server/app.js"
+=======
+    "dev": "nodemon app.js"
+>>>>>>> 245b7b5203f435d5c0734875647bf4a221201df7
   },
   "keywords": [],
   "author": "Ritesh Bhosale",
