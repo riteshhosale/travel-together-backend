@@ -24,8 +24,25 @@ const tripSchema = new mongoose.Schema({
  members: [{
   type: mongoose.Schema.Types.ObjectId,
   ref: "User"
+ }],
+
+ joinedUsers: [{
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "User"
  }]
 
-}, { timestamps: true });
+}, {
+ timestamps: true,
+ toJSON: { virtuals: true },
+ toObject: { virtuals: true }
+});
+
+tripSchema.virtual("joinedCount").get(function() {
+ const joinedUsers = Array.isArray(this.joinedUsers) && this.joinedUsers.length > 0
+  ? this.joinedUsers
+  : this.members;
+
+ return Array.isArray(joinedUsers) ? joinedUsers.length : 0;
+});
 
 module.exports = mongoose.model("Trip", tripSchema);

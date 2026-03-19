@@ -1,5 +1,13 @@
 const Trip = require("../models/Trip");
 
+const buildJoinedUsers = (trip)=>{
+ const joinedUsers = Array.isArray(trip.joinedUsers) && trip.joinedUsers.length > 0
+  ? trip.joinedUsers
+  : trip.members;
+
+ return Array.isArray(joinedUsers) ? joinedUsers : [];
+};
+
 exports.createTrip = async(req,res)=>{
 
  try{
@@ -34,7 +42,8 @@ exports.createTrip = async(req,res)=>{
    budget: parsedBudget,
    description: description ? description.trim() : "",
    createdBy:req.user.id,
-   members:[req.user.id]
+   members:[req.user.id],
+   joinedUsers:[req.user.id]
   });
 
   await trip.save();
@@ -56,9 +65,20 @@ exports.getTrips = async(req,res)=>{
   const trips = await Trip.find()
    .populate("createdBy", "name location")
    .populate("members", "name")
+   .populate("joinedUsers", "name")
    .sort({ createdAt: -1 });
 
-  res.json(trips);
+  const payload = trips.map((trip)=>{
+   const joinedUsers = buildJoinedUsers(trip);
+
+   return {
+    ...trip.toObject(),
+    joinedUsers,
+    joinedCount: joinedUsers.length
+   };
+  });
+
+  res.json(payload);
 
  }catch(error){
   res.status(500).json({
@@ -78,7 +98,9 @@ exports.joinTrip = async(req,res)=>{
    });
   }
 
-  const trip = await Trip.findById(req.params.id);
+  const trip = await Trip.findById(req.params.id)
+   .populate("members", "name")
+   .populate("joinedUsers", "name");
 
   if(!trip){
    return res.status(404).json({
@@ -86,23 +108,73 @@ exports.joinTrip = async(req,res)=>{
    });
   }
 
-    if(trip.members.some((member)=>member.toString() === req.user.id)){
+  const hasJoined = (Array.isArray(trip.joinedUsers) && trip.joinedUsers.some((member)=>member.toString() === req.user.id))
+   || (Array.isArray(trip.members) && trip.members.some((member)=>member.toString() === req.user.id));
+
+  if(hasJoined){
+   const joinedUsers = buildJoinedUsers(trip);
+
    return res.json({
-    message: "Already joined"
+    message: "Already joined",
+    joinedUsers,
+    joinedCount: joinedUsers.length
    });
   }
 
+  if(!Array.isArray(trip.members)){
+   trip.members = [];
+  }
+
+  if(!Array.isArray(trip.joinedUsers)){
+   trip.joinedUsers = [];
+  }
+
   trip.members.push(req.user.id);
+  trip.joinedUsers.push(req.user.id);
 
   await trip.save();
 
+  const joinedUsers = buildJoinedUsers(trip);
+
   res.json({
-   message: "Joined trip"
+   message: "Joined trip",
+   joinedUsers,
+   joinedCount: joinedUsers.length
   });
 
  }catch(error){
   res.status(500).json({
    message: "Failed to join trip"
+  });
+ }
+
+};
+
+exports.getTripById = async(req,res)=>{
+
+ try{
+  const trip = await Trip.findById(req.params.id)
+   .populate("createdBy", "name location")
+   .populate("members", "name")
+   .populate("joinedUsers", "name");
+
+  if(!trip){
+   return res.status(404).json({
+    message: "Trip not found"
+   });
+  }
+
+  const joinedUsers = buildJoinedUsers(trip);
+
+  res.json({
+   ...trip.toObject(),
+   joinedUsers,
+   joinedCount: joinedUsers.length
+  });
+
+ }catch(error){
+  res.status(500).json({
+   message: "Failed to fetch trip"
   });
  }
 

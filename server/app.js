@@ -175,6 +175,45 @@ socket.on("sendMessage", async (data) => {
 
 })
 
+socket.on("getTripMemberCounts", async (tripId) => {
+ try {
+  if (!tripId || !mongoose.Types.ObjectId.isValid(tripId)) {
+   socket.emit("tripMemberCountsError", {
+    message: "Invalid trip id"
+   })
+   return
+  }
+
+  const trip = await Trip.findById(tripId)
+   .select("members joinedUsers")
+   .populate("joinedUsers", "name")
+   .populate("members", "name")
+
+  if (!trip) {
+   socket.emit("tripMemberCountsError", {
+    message: "Trip not found"
+   })
+   return
+  }
+
+  const joinedUsers = Array.isArray(trip.joinedUsers) && trip.joinedUsers.length > 0
+   ? trip.joinedUsers
+   : trip.members
+
+  const safeJoinedUsers = Array.isArray(joinedUsers) ? joinedUsers : []
+
+  socket.emit("tripMemberCounts", {
+   tripId: String(trip._id),
+   joinedUsers: safeJoinedUsers,
+   joinedCount: safeJoinedUsers.length
+  })
+ } catch (error) {
+  socket.emit("tripMemberCountsError", {
+   message: "Failed to fetch trip member counts"
+  })
+ }
+})
+
 })
 
 server.listen(PORT,()=>{
