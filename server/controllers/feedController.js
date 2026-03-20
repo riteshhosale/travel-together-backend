@@ -1,11 +1,24 @@
 const Feed = require("../models/Feed")
 
+const getBaseUrl = (req) => {
+  if (process.env.BACKEND_BASE_URL) {
+    return String(process.env.BACKEND_BASE_URL).replace(/\/+$/, "")
+  }
+
+  const forwardedProto = req.headers["x-forwarded-proto"]
+  const forwardedHost = req.headers["x-forwarded-host"]
+  const protocol = forwardedProto || req.protocol || "http"
+  const host = forwardedHost || req.get("host")
+
+  return `${protocol}://${host}`
+}
+
 exports.createPost = async(req,res)=>{
 
 try{
 
 const { image, caption } = req.body
-const backendBaseUrl = process.env.BACKEND_BASE_URL || `http://localhost:${process.env.PORT || 5000}`
+const backendBaseUrl = getBaseUrl(req)
 
 const uploadedImage = req.file
  ? `${backendBaseUrl}/uploads/${req.file.filename}`
