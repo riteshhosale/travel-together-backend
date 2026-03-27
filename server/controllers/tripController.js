@@ -179,3 +179,29 @@ exports.getTripById = async(req,res)=>{
  }
 
 };
+
+exports.getTripMembers = async(req,res)=>{
+ try{
+  const trip = await Trip.findById(req.params.id)
+   .populate("members", "name")
+   .populate("joinedUsers", "name");
+
+  if(!trip){
+   return res.status(404).json({
+    message: "Trip not found"
+   });
+  }
+
+  const joinedUsers = buildJoinedUsers(trip);
+
+  res.json({
+   tripId: String(trip._id),
+   members: joinedUsers,
+   count: joinedUsers.length
+  });
+ }catch(error){
+  res.status(500).json({
+   message: "Failed to fetch trip members"
+  });
+ }
+};
